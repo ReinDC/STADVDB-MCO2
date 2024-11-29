@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Games</title>
+</head>
+<body>
+    <h1>Steam Games List</h1>
+    <button onclick="getGames()">Load Games</button>
+    <div id="gamesList"></div>
+
+    <script>
+        async function getGames() {
+            try {
+                const response = await fetch('http://localhost:3000/games');
+                const games = await response.json();
+                let output = '<ul>';
+                games.forEach(game => {
+                    output += `<li>${game.Name} - ${game.Genres}</li>`;
+                });
+                output += '</ul>';
+                document.getElementById('gamesList').innerHTML = output;
+            } catch (error) {
+                console.error('Error fetching games:', error);
+            }
+        }
+    </script>
+</body>
+</html>
