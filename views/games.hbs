@@ -1,11 +1,17 @@
 <h1>Steam Games List</h1>
+<label for="game_search"></label>
+<input type="text" name="game_search" id="search">
+<button onclick="gameSearch()">Search</button>
+<label for="gameYear">Select Game Year:</label>
+<select id="gameYear" name="gameYear">
+  <option value=">2010">After 2010</option>
+  <option value="<2010>">Before 2010</option>
+</select>
 <button onclick="getGames()">Load Games</button>
 <div id="gamesList"></div>
 
 
-<label for="game_search"></label>
-<input type="text" name="game_search" id="search">
-<button onclick="gameSearch()">Search</button>
+
 
 
 <script src="/js/game.js"></script>
