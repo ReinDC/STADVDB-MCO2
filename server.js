@@ -2,8 +2,6 @@ const express = require('express');
 const mysql = require('mysql2');
 require('dotenv').config();
 const hbs = require('hbs');
-const routes = require('./src/routes/indexRouter.js');
-const conn = require('./src/scripts/conn.js');
 const path = require('path');
 
 // Create Express app
@@ -81,8 +79,22 @@ app.post('/recover', (req, res) => {
     }
 });
 
-// Route integration
-app.use(routes);
+app.get('/games', (req, res) => {
+    connectionPools[0].query('SELECT * FROM more_Info', (error, results) => {
+        if (error) {
+            console.error('Database query error:', error);
+            res.status(500).send('Database error');
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+app.get('/', (req, res) => {
+    res.render("games", {
+        title: "Front Page",
+    });
+});
 
 // Start the server
 const PORT = process.env.PORT || 3000;
