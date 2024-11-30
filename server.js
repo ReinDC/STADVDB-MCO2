@@ -4,6 +4,9 @@ require('dotenv').config();
 const hbs = require('hbs');
 const path = require('path');
 
+const gameRouter = require('./src/routes/indexRouter');
+
+
 // Create Express app
 const app = express();
 app.use(express.json());
@@ -16,35 +19,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Create MySQL connection pool for each node
-const nodes = [
-    { host: 'ccscloud.dlsu.edu.ph', port: 20602, user: 'root', password: process.env.node1password, database: 'steam_games' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20612, user: 'root', password: process.env.node23password, database: 'steam_games' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20622, user: 'root', password: process.env.node23password, database: 'steam_games' },
-];
-
-const connectionPools = nodes.map((node) =>
-    mysql.createPool({
-        host: node.host,
-        port: node.port,
-        user: node.user,
-        password: node.password,
-        database: node.database,
-        waitForConnections: true,
-        connectionLimit: 10,
-    })
-);
-
-// Concurrency control middleware
-app.use((req, res, next) => {
-    const isolationLevel = req.query.isolationLevel || 'REPEATABLE READ'; // Default isolation level
-    connectionPools.forEach(pool => {
-        pool.query(`SET SESSION TRANSACTION ISOLATION LEVEL ${isolationLevel}`, (err) => {
-            if (err) console.error('Error setting isolation level:', err);
-        });
-    });
-    next();
-});
+app.use(gameRouter);
 
 // Data replication logic
 const replicateData = (query, callback) => {
@@ -60,88 +35,6 @@ const replicateData = (query, callback) => {
     });
 };
 
-// Crash recovery simulation
-app.post('/recover', (req, res) => {
-    const failedNodeIndex = req.body.failedNodeIndex;
-    const transactionLog = req.body.transactionLog;
-
-    if (failedNodeIndex !== undefined && transactionLog) {
-        const pool = connectionPools[failedNodeIndex];
-        transactionLog.forEach((query) => {
-            pool.query(query, (err) => {
-                if (err) console.error(`Recovery failed for Node ${failedNodeIndex + 1}:`, err);
-                else console.log(`Recovered transaction: ${query}`);
-            });
-        });
-        res.status(200).send(`Node ${failedNodeIndex + 1} recovered.`);
-    } else {
-        res.status(400).send('Invalid recovery request.');
-    }
-});
-
-app.get('/games', (req, res) => {
-    const sql = 'SELECT * FROM more_Info LIMIT 20'; // Add LIMIT to restrict the number of records
-
-    connectionPools[0].query(sql, (error, results) => {
-        if (error) {
-            console.error('Database query error:', error);
-            res.status(500).send('Database error');
-        } else {
-            res.json(results);
-        }
-    });
-});
-
-app.get('/search/games', (req, res) => {
-    const searchName = req.query.name; // Get the 'name' query parameter
-
-    if (!searchName) {
-        return res.status(400).send('Game name query parameter is required.');
-    }
-
-    // SQL query with LIKE to search for the game name
-    const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
-
-    // Run the query
-    connectionPools[0].query(sql, [`%${searchName}%`], (error, results) => {
-        if (error) {
-            console.error('Database query error:', error);
-            res.status(500).send('Database error');
-        } else {
-            if (results.length === 0) {
-                return res.status(404).send('No games found matching the search criteria.');
-            }
-            res.json(results);
-        }
-    });
-});
-
-app.get('/filter', (req, res) => {
-    const searchYear = req.query.year; // Get the year from query parameter
-
-    // SQL query to filter by exact year (assuming 'Release_date' is just the year)
-    const sql = 'SELECT * FROM games_Info WHERE Release_date = ?';
-
-    // Run the query
-    connectionPools[0].query(sql, [searchYear], (error, results) => {
-        if (error) {
-            console.error('Database query error:', error);
-            res.status(500).send('Database error');
-        } else {
-            if (results.length === 0) {
-                return res.status(404).send('No games found matching the search criteria.');
-            }
-            res.json(results);
-        }
-    });
-});
-
-
-app.get('/', (req, res) => {
-    res.render("games", {
-        title: "Front Page",
-    });
-});
 
 // Start the server
 const PORT = process.env.PORT || 3000;
