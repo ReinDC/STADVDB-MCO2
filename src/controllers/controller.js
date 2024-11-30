@@ -43,25 +43,6 @@ exports.searchGames = (req, res) => {
     });
 };
 
-// GET: Filter games by year
-exports.filterGames = (req, res) => {
-    const searchYear = req.query.year;
-
-    const sql = 'SELECT * FROM games_Info WHERE Release_date = ?';
-
-    connectionPools[0].query(sql, [searchYear], (error, results) => {
-        if (error) {
-            console.error('Database query error:', error);
-            res.status(500).send('Database error');
-        } else {
-            if (results.length === 0) {
-                return res.status(404).send('No games found matching the search criteria.');
-            }
-            res.json(results);
-        }
-    });
-};
-
 // POST: Recover failed node
 exports.recoverNode = (req, res) => {
     const failedNodeIndex = req.body.failedNodeIndex;
