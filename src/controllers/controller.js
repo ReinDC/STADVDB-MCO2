@@ -20,6 +20,25 @@ exports.getFrontPage = (req, res) => {
     });
 }
 
+exports.updateQuery = async (req, res) => {
+    const { name, AppId } = req.body; // assuming these are sent in the request body
+
+    const updateQuery = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
+    const params = [name, AppId];
+
+    try {
+        const result = await executeUpdate(updateQuery, params);
+        if (result.affectedRows > 0) {
+            res.json({ message: 'User name updated successfully' });
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while updating the user name' });
+    }
+};
+
+
 // GET: Search games by name
 exports.searchGames = (req, res) => {
     const searchName = req.query.name;
