@@ -18,9 +18,9 @@ app.use((req, res, next) => {
 
 // Create MySQL connection pool for each node
 const nodes = [
-    { host: 'ccscloud.dlsu.edu.ph', port: 20602, user: 'root', password: process.env.NODE1_PASSWORD, database: 'steam_games' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20612, user: 'root', password: process.env.NODE2_PASSWORD, database: 'steam_games_node2' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20622, user: 'root', password: process.env.NODE3_PASSWORD, database: 'steam_games_node3' },
+    { host: 'ccscloud.dlsu.edu.ph', port: 20602, user: 'root', password: process.env.node1password, database: 'steam_games' },
+    { host: 'ccscloud.dlsu.edu.ph', port: 20612, user: 'root', password: process.env.node23password, database: 'steam_games' },
+    { host: 'ccscloud.dlsu.edu.ph', port: 20622, user: 'root', password: process.env.node23password, database: 'steam_games' },
 ];
 
 const connectionPools = nodes.map((node) =>
@@ -80,7 +80,9 @@ app.post('/recover', (req, res) => {
 });
 
 app.get('/games', (req, res) => {
-    connectionPools[0].query('SELECT * FROM more_Info', (error, results) => {
+    const sql = 'SELECT * FROM more_Info LIMIT 20'; // Add LIMIT to restrict the number of records
+
+    connectionPools[0].query(sql, (error, results) => {
         if (error) {
             console.error('Database query error:', error);
             res.status(500).send('Database error');
@@ -89,6 +91,31 @@ app.get('/games', (req, res) => {
         }
     });
 });
+
+app.get('/search/games', (req, res) => {
+    const searchName = req.query.name; // Get the 'name' query parameter
+
+    if (!searchName) {
+        return res.status(400).send('Game name query parameter is required.');
+    }
+
+    // SQL query with LIKE to search for the game name
+    const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
+
+    // Run the query
+    connectionPools[0].query(sql, [`%${searchName}%`], (error, results) => {
+        if (error) {
+            console.error('Database query error:', error);
+            res.status(500).send('Database error');
+        } else {
+            if (results.length === 0) {
+                return res.status(404).send('No games found matching the search criteria.');
+            }
+            res.json(results);
+        }
+    });
+});
+
 
 app.get('/', (req, res) => {
     res.render("games", {
@@ -99,5 +126,5 @@ app.get('/', (req, res) => {
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server: Running on http://localhost:${PORT}`);
 });
