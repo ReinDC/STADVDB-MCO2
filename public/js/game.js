@@ -1,8 +1,8 @@
-// Fetch and display all games
 async function getGames() {
     try {
         const response = await fetch('/games');
-
+        
+        // If the response status is not OK, throw an error
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
         }
@@ -14,23 +14,24 @@ async function getGames() {
             return;
         }
 
+        // Create table structure
         let output = '<table>';
-        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';
+        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';  
 
         games.forEach(game => {
-            output += `
-                <tr>
-                    <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
-                    <td style="text-align:center; padding: 10px;">${game.AppID}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Name}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Genres}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Developers}</td>
-                </tr>
-            `;
+            // Ensure 'Name' and 'Genres' match the properties from your database
+            output += 
+            `   <tr>
+                <td><button onclick="editGame(${game.AppID})">Edit</button></td>
+                <td style="text-align:center; padding: 10px;">${game.AppID}</td>
+                <td style="text-align:center; padding: 10px;">${game.Name}</td>
+                <td style="text-align:center; padding: 10px;">${game.Genres}</td>
+                <td style="text-align:center; padding: 10px;">${game.Developers}</td>
+                </tr>`;
         });
 
         output += '</table>';
-        document.getElementById('gamesList').innerHTML = output;
+        document.getElementById('gamesList').innerHTML = output; 
 
     } catch (error) {
         console.error('Error fetching games:', error);
@@ -38,10 +39,10 @@ async function getGames() {
     }
 }
 
-// Search games by name
+
 async function gameSearch() {
-    const searchValue = document.getElementById('search').value;
-    const url = searchValue ? `/search/games?name=${encodeURIComponent(searchValue)}` : '/games';
+    const searchValue = document.getElementById('search').value; // Get the value from the search input
+    const url = searchValue ? `/search/games?name=${encodeURIComponent(searchValue)}` : '/games'; // Append search query if there is a search term
 
     try {
         const response = await fetch(url);
@@ -57,22 +58,29 @@ async function gameSearch() {
             return;
         }
 
+        // let output = '<ul>';
+        // games.forEach(game => {
+        //     output += `<li>${game.Name} - ${game.Genres}</li>`;
+        // });
+        // output += '</ul>';
+
+        // document.getElementById('gamesList').innerHTML = output;
+
         let output = '<table>';
-        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';
+        output += '<tr><th></th><th>AppID</th><th>Title</th><th>Genre</th></th><th>Developers</th></tr>';  
+            games.forEach(game => {
+                // Ensure 'Name' and 'Genres' match the properties from your database
+                output += 
+                `   <tr>
+                    <td><button onclick="">Edit</button></td>
+                    <td style= "text-align:center; padding: 10px;">${game.AppID}</td>
+                    <td style= "text-align:center; padding: 10px;">${game.Name}</td>
+                    <td style= "text-align:center; padding: 10px;">${game.Genres}</td>
+                    <td style= "text-align:center; padding: 10px;">${game.Developers}</td>
+                    </tr>`;
+            });
+            output += '</table>';
 
-        games.forEach(game => {
-            output += `
-                <tr>
-                    <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
-                    <td style="text-align:center; padding: 10px;">${game.AppID}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Name}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Genres}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Developers}</td>
-                </tr>
-            `;
-        });
-
-        output += '</table>';
         document.getElementById('gamesList').innerHTML = output;
 
     } catch (error) {
@@ -81,18 +89,16 @@ async function gameSearch() {
     }
 }
 
-// Search games by AppID
 async function AppIDSearch() {
-    const searchValue = document.getElementById('appId_search').value.trim();
-
+    const searchValue = document.getElementById('appId_search').value.trim(); // Get the value from the search input and trim whitespace
     if (!searchValue) {
-        document.getElementById('gamesList').innerHTML = '<p>Please enter an AppID to search.</p>';
+        document.getElementById('gamesList').innerHTML = "<p>Please enter an AppID to search.</p>";
         return;
     }
 
     const url = `/search/appID?AppId=${encodeURIComponent(searchValue)}`;
-    document.getElementById('gamesList').innerHTML = '';
-
+    document.getElementById('gamesList').innerHTML = ""; // Clear previous results
+    
     try {
         const response = await fetch(url);
 
@@ -121,14 +127,21 @@ async function AppIDSearch() {
                 </tr>
             `;
         });
-
         output += '</table>';
+
         document.getElementById('gamesList').innerHTML = output;
 
     } catch (error) {
         console.error('Error fetching games:', error);
         document.getElementById('gamesList').innerHTML = '<p>Failed to fetch games. Please try again later.</p>';
     }
+};
+
+
+
+
+
+
 }
 
 // Edit a game title
