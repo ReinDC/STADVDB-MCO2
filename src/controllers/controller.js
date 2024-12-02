@@ -1,5 +1,4 @@
 const { connectionPools, isAvailable} = require('../scripts/conn'); // Assuming you have a file that exports these
-const replicateData = require('../scripts/dbReplicate');
 
 // Function to replicate the update to the appropriate slave node
 const updateToSlave = (gameId, newTitle, nodeNum) => {
