@@ -19,8 +19,8 @@ async function getGames() {
         games.forEach(game => {
             output += `
                 <tr>
-                    <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
-                    <td><button onclick="deleteGame(${game.AppID})">Delete</button></td>
+                    <td><button onclick="editGame(${game.AppID}, '${game.Name}', '${game.release_date}')">Edit</button></td>
+                    <td><button onclick="deleteGame(${game.AppID}, '${game.release_date}')">Delete</button></td>
                     <td style="text-align:center; padding: 10px;">${game.AppID}</td>
                     <td style="text-align:center; padding: 10px;">${game.Name}</td>
                     <td style="text-align:center; padding: 10px;">${game.Genres}</td>
@@ -87,7 +87,7 @@ async function gameSearch() {
 }
 
 // Edit a game title
-async function editGame(appID, currentName) {
+async function editGame(appID, currentName, release_date) {
     const newName = prompt(`Edit the title for game with AppID: ${appID}\nCurrent title: ${currentName}`, currentName);
 
     if (newName && newName !== currentName) {
@@ -97,7 +97,7 @@ async function editGame(appID, currentName) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name: newName }),
+                body: JSON.stringify({ name: newName , releaseYear: release_date}),
             });
 
             if (!response.ok) {
@@ -115,7 +115,7 @@ async function editGame(appID, currentName) {
 }
 
 // Delete a game 
-async function deleteGame(appID) {
+async function deleteGame(appID, release_date) {
     const confirmation = confirm(`Are you sure you want to delete this game?`);
     
     if (!confirmation) {
@@ -127,6 +127,7 @@ async function deleteGame(appID) {
             method: 'DELETE',  // Use DELETE instead of PUT
             headers: {
                 'Content-Type': 'application/json',
+            body: JSON.stringify({ releaseYear: release_date}),
             },
         });
 

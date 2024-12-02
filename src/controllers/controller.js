@@ -1,6 +1,43 @@
 const { connectionPools, isAvailable} = require('../scripts/conn'); // Assuming you have a file that exports these
 const replicateData = require('../scripts/dbReplicate');
 
+// Function to replicate the update to the appropriate slave node
+const updateToSlave = (gameId, newTitle, nodeNum) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
+        const params = [newTitle, gameId];
+
+        // Use the correct connection pool based on the node number (Node 2 or Node 3)
+        connectionPools[nodeNum - 1].query(sql, params, (error, results) => {
+            if (error) {
+                console.error(`Error replicating to Node ${nodeNum}:`, error);
+                reject(error);  // Reject the promise if the replication fails
+            } else {
+                console.log(`Replicated to Node ${nodeNum}:`, results);
+                resolve(results);  // Resolve the promise if the replication succeeds
+            }
+        });
+    });
+};
+
+const deleteToSlave = (appID, nodeNum) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'DELETE FROM more_Info WHERE AppId = ?';
+        const params = [appID];
+
+        // Use the correct connection pool based on the node number (Node 2 or Node 3)
+        connectionPools[nodeNum - 1].query(sql, params, (error, results) => {
+            if (error) {
+                console.error(`Error replicating to Node ${nodeNum}:`, error);
+                reject(error);  // Reject the promise if the replication fails
+            } else {
+                console.log(`Replicated to Node ${nodeNum}:`, results);
+                resolve(results);  // Resolve the promise if the replication succeeds
+            }
+        });
+    });
+};
+
 const gameController = {
     getFrontPage: async (req, res) => {
         res.render("games", {
@@ -23,7 +60,8 @@ const gameController = {
 
     deleteGame: (req, res) => {
         const { appID } = req.params;
-    
+        const { releaseYear } = req.body;
+        
         if (!appID) {
             return res.status(400).json({ error: "'appID' is required." });
         }
@@ -31,11 +69,24 @@ const gameController = {
         const sql = 'DELETE FROM more_Info WHERE AppId = ?';
         const params = [appID];
     
-        connectionPools[0].query(sql, params, (error, results) => {
+        connectionPools[0].query(sql, params, async (error, results) => {
             if (error) {
                 console.error('Database query error:', error);
                 res.status(500).json({ error: 'An error occurred while deleting the game.' });
             } else if (results.affectedRows > 0) {
+                try {
+                    if (releaseYear < 2010) {
+                        // Replicate to Node 2 (games before 2010)
+                        await deleteToSlave(appID, 2);
+                    } else {
+                        // Replicate to Node 3 (games after 2010)
+                        await deleteToSlave(appID, 3);
+                    }
+                    res.json({ message: 'Game title deleted successfully.' });
+                } catch (replicationError) {
+                    console.error('Error replicating to slave:', replicationError);
+                    return res.status(500).json({ error: 'Error replicating the update to slave node.' });
+                }
                 res.json({ message: 'Game deleted successfully.' });
             } else {
                 res.status(404).json({ error: 'Game not found.' });
@@ -65,6 +116,7 @@ const gameController = {
     updateGameTitle: (req, res) => { // Correctly assign the function as a property
         const { name } = req.body;
         const { appID } = req.params;
+        const { releaseYear } = req.body;
     
         if (!name || !appID) {
             return res.status(400).json({ error: "Both 'name' and 'appID' are required." });
@@ -73,12 +125,25 @@ const gameController = {
         const sql = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
         const params = [name, appID];
     
-        connectionPools[0].query(sql, params, (error, results) => {
+        connectionPools[0].query(sql, params, async (error, results) => {
             if (error) {
                 console.error('Database query error:', error);
                 res.status(500).json({ error: 'An error occurred while updating the game title.' });
             } else if (results.affectedRows > 0) {
-                res.json({ message: 'Game title updated successfully.' });
+                try {
+                    if (releaseYear < 2010) {
+                        // Replicate to Node 2 (games before 2010)
+                        await updateToSlave(appID, name, 2);
+                    } else {
+                        // Replicate to Node 3 (games after 2010)
+                        await updateToSlave(appID, name, 3);
+                    }
+                    res.json({ message: 'Game title updated successfully.' });
+
+                } catch (replicationError) {
+                    console.error('Error replicating to slave:', replicationError);
+                    return res.status(500).json({ error: 'Error replicating the update to slave node.' });
+                }
             } else {
                 res.status(404).json({ error: 'Game not found.' });
             }

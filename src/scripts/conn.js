@@ -3,11 +3,12 @@ require('dotenv').config();
 
 // Define your nodes and create the connection pools
 const nodes = [
-    { host: 'ccscloud.dlsu.edu.ph', port: 20602, user: 'root', password: process.env.node1password, database: 'steam_games' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20612, user: 'root', password: process.env.node23password, database: 'steam_games' },
-    { host: 'ccscloud.dlsu.edu.ph', port: 20622, user: 'root', password: process.env.node23password, database: 'steam_games' },
+    { host: 'ccscloud.dlsu.edu.ph', port: 20602, user: 'root', password: process.env.node1password, database: 'steam_games', isMaster: true }, // Node 1 as Master
+    { host: 'ccscloud.dlsu.edu.ph', port: 20612, user: 'root', password: process.env.node23password, database: 'steam_games', isMaster: false }, // Node 2 as Slave
+    { host: 'ccscloud.dlsu.edu.ph', port: 20622, user: 'root', password: process.env.node23password, database: 'steam_games', isMaster: false }, // Node 3 as Slave
 ];
 
+// Create connection pools for each node
 const connectionPools = nodes.map((node) =>
     mysql.createPool({
         host: node.host,
@@ -17,8 +18,11 @@ const connectionPools = nodes.map((node) =>
         database: node.database,
         waitForConnections: true,
         connectionLimit: 10,
+        // Optional: add a flag or additional configuration for master/slave handling if needed
     })
 );
+
+
 
 async function queryNodeDelay(nodenum, query, values) {
     let node;
@@ -60,7 +64,7 @@ async function isAvailable(node_num) {
         await connectionPools[node_num - 1].promise().query("SELECT 1");
         return true;
     } catch (err) {
-        console.error(`Node ${node_num} is unavailable:`, err);
+        console.error(`Node ${node_num} is unavailable:`);
         return false;
     }
 }
