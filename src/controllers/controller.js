@@ -202,29 +202,6 @@ const checkNodes = async (server_num, year) => {
             }
         }
     },
-    appIDSearch: async (req, res) => {
-        // Validate if AppId is provided and is of correct format
-        const { AppId } = req.query; // Use req.query since AppId is in the URL query string
-        if (!AppId) {
-            return res.status(400).send('AppId is required.');
-        }
-    
-        const sql = 'SELECT * FROM more_Info WHERE AppID = ?';
-        const params = [AppId];
-    
-        connectionPools[0].query(sql, params, (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                return res.status(500).send('Internal server error');
-            }
-    
-            if (results.length === 0) {
-                return res.status(404).send('No games found matching the search criteria.');
-            }
-    
-            res.json(results); // Return results as JSON response
-        });
-    },
 }
 
 <<<<<<< Updated upstream
