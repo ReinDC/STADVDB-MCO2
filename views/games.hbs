@@ -1,8 +1,20 @@
 <h1>Steam Games List</h1>
-<label for="game_search"></label>
+<link rel="stylesheet" href="./css/games.css">
+<label for="game_search">AppID</label>
+
+<input type="text" name="appId_search" id="appId_search">
+<button onclick="AppIDSearch()">Search</button>
+
+<label for="game_search">Name</label>
+
 <input type="text" name="game_search" id="search">
 <button onclick="gameSearch()">Search</button>
+
 <button onclick="getGames()">Load Games</button>
+<hr>
+<div id="edit-area"></div>
+
+
 <div id="gamesList"></div>
 
 

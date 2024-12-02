@@ -17,6 +17,7 @@ router.use((req, res, next) => {
 router.get('/', gameController.getFrontPage)
 router.get('/games', gameController.getGames);
 router.get('/search/games', gameController.searchGames);
+
 router.post('/recover', gameController.recoverNode);
 
 module.exports = router;
