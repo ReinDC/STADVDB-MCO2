@@ -1,8 +1,7 @@
 async function getGames() {
     try {
         const response = await fetch('/games');
-        
-        // If the response status is not OK, throw an error
+
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
         }
@@ -14,24 +13,23 @@ async function getGames() {
             return;
         }
 
-        // Create table structure
         let output = '<table>';
-        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';  
+        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';
 
         games.forEach(game => {
-            // Ensure 'Name' and 'Genres' match the properties from your database
-            output += 
-            `   <tr>
-                <td><button onclick="editGame(${game.AppID})">Edit</button></td>
-                <td style="text-align:center; padding: 10px;">${game.AppID}</td>
-                <td style="text-align:center; padding: 10px;">${game.Name}</td>
-                <td style="text-align:center; padding: 10px;">${game.Genres}</td>
-                <td style="text-align:center; padding: 10px;">${game.Developers}</td>
-                </tr>`;
+            output += `
+                <tr>
+                    <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
+                    <td style="text-align:center; padding: 10px;">${game.AppID}</td>
+                    <td style="text-align:center; padding: 10px;">${game.Name}</td>
+                    <td style="text-align:center; padding: 10px;">${game.Genres}</td>
+                    <td style="text-align:center; padding: 10px;">${game.Developers}</td>
+                </tr>
+            `;
         });
 
         output += '</table>';
-        document.getElementById('gamesList').innerHTML = output; 
+        document.getElementById('gamesList').innerHTML = output;
 
     } catch (error) {
         console.error('Error fetching games:', error);
@@ -138,11 +136,6 @@ async function AppIDSearch() {
 };
 
 
-
-
-
-
-}
 
 // Edit a game title
 async function editGame(appID, currentName) {

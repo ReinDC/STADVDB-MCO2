@@ -1,8 +1,5 @@
 const { connectionPools, executeUpdate, nodes } = require('../scripts/conn'); // Assuming you have a file that exports these
 
-
-
-
 const gameController = {
     getFrontPage: async (req, res) => {
         res.render("games", {
