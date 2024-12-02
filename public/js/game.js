@@ -59,14 +59,6 @@ async function gameSearch() {
             return;
         }
 
-        // let output = '<ul>';
-        // games.forEach(game => {
-        //     output += `<li>${game.Name} - ${game.Genres}</li>`;
-        // });
-        // output += '</ul>';
-
-        // document.getElementById('gamesList').innerHTML = output;
-
         let output = '<table>';
         output += '<tr><th>Edit</th><th>Delete</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th><th>Release Date</th></tr>';
 
