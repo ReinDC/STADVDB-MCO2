@@ -68,7 +68,8 @@ async function gameSearch() {
         // document.getElementById('gamesList').innerHTML = output;
 
         let output = '<table>';
-        output += '<tr><th></th><th>AppID</th><th>Title</th><th>Genre</th></th><th>Developers</th></tr>';  
+        output += '<tr><th>Edit</th><th>Delete</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th><th>Release Date</th></tr>';
+
             games.forEach(game => {
                 // Ensure 'Name' and 'Genres' match the properties from your database
                 output += 
