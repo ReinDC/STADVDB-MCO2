@@ -1,7 +1,4 @@
-const { connectionPools, executeUpdate, nodes } = require('../scripts/conn'); // Assuming you have a file that exports these
-
-
-
+const { connectionPools, executeUpdate, nodes } = require('../scripts/conn'); // Ensure this path is correct
 
 const gameController = {
     getFrontPage: async (req, res) => {
@@ -12,7 +9,7 @@ const gameController = {
 
     getGames: (req, res) => {
         const sql = 'SELECT * FROM more_Info LIMIT 20';
-    
+
         connectionPools[0].query(sql, (error, results) => {
             if (error) {
                 console.error('Database query error:', error);
@@ -21,35 +18,40 @@ const gameController = {
                 res.json(results);
             }
         });
-    },    
+    },
+
+    updateGameTitle: (req, res) => { // Correctly assign the function as a property
+        const { name } = req.body;
+        const { appID } = req.params;
     
-    updateQuery: async (req, res) => {
-        const { name, AppId } = req.body; // assuming these are sent in the request body
-    
-        const updateQuery = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
-        const params = [name, AppId];
-    
-        try {
-            const result = await executeUpdate(updateQuery, params);
-            if (result.affectedRows > 0) {
-                res.json({ message: 'User name updated successfully' });
-            } else {
-                res.status(404).json({ error: 'User not found' });
-            }
-        } catch (error) {
-            res.status(500).json({ error: 'An error occurred while updating the user name' });
+        if (!name || !appID) {
+            return res.status(400).json({ error: "Both 'name' and 'appID' are required." });
         }
-    },    
+    
+        const sql = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
+        const params = [name, appID];
+    
+        connectionPools[0].query(sql, params, (error, results) => {
+            if (error) {
+                console.error('Database query error:', error);
+                res.status(500).json({ error: 'An error occurred while updating the game title.' });
+            } else if (results.affectedRows > 0) {
+                res.json({ message: 'Game title updated successfully.' });
+            } else {
+                res.status(404).json({ error: 'Game not found.' });
+            }
+        });
+    },
 
     searchGames: (req, res) => {
         const searchName = req.query.name;
-    
+
         if (!searchName) {
             return res.status(400).send('Game name query parameter is required.');
         }
-    
+
         const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
-    
+
         connectionPools[0].query(sql, [`%${searchName}%`], (error, results) => {
             if (error) {
                 console.error('Database query error:', error);
@@ -62,11 +64,10 @@ const gameController = {
             }
         });
     },
-    
+
     recoverNode: (req, res) => {
-        const failedNodeIndex = req.body.failedNodeIndex;
-        const transactionLog = req.body.transactionLog;
-    
+        const { failedNodeIndex, transactionLog } = req.body;
+
         if (failedNodeIndex !== undefined && transactionLog) {
             const pool = connectionPools[failedNodeIndex];
             transactionLog.forEach((query) => {
@@ -80,7 +81,7 @@ const gameController = {
             res.status(400).send('Invalid recovery request.');
         }
     },
-    
+
     checkNodes: async (server_num, year) => {
         if (server_num == 1) {
             if (await nodes.isAvailable(server_num)) {
@@ -106,7 +107,6 @@ const gameController = {
             }
         }
     },
-}
-
+};
 
 module.exports = gameController;

@@ -4,6 +4,7 @@ const { connectionPools } = require('../scripts/conn'); // Adjust the path to ap
 const express = require('express');
 const router = express();
 
+// Middleware to set transaction isolation level
 router.use((req, res, next) => {
     const isolationLevel = req.query.isolationLevel || 'REPEATABLE READ'; // Default isolation level
     connectionPools.forEach(pool => {
@@ -14,10 +15,11 @@ router.use((req, res, next) => {
     next();
 });
 
-router.get('/', gameController.getFrontPage)
-router.get('/games', gameController.getGames);
-router.get('/search/games', gameController.searchGames);
-
-router.post('/recover', gameController.recoverNode);
+// Routes
+router.get('/', gameController.getFrontPage); // Front page route
+router.get('/games', gameController.getGames); // Get all games
+router.get('/search/games', gameController.searchGames); // Search games by name
+router.put('/games/:appID', gameController.updateGameTitle); // Update game title
+router.post('/recover', gameController.recoverNode); // Recover node
 
 module.exports = router;
