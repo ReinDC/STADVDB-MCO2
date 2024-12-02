@@ -43,6 +43,25 @@ const gameController = {
         });
     },    
 
+    searchConcurrent: (req, res) =>{
+        const searchName = 'Counter-Strike';
+        const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
+    
+        
+        for (let n = 0; n < connectionPools.length; n++) {
+            connectionPools[n].query(sql, [`%${searchName}%`], (error, results) => {
+                if (error) {
+                    console.log('Database query error:', error);
+                } else {
+                    if (results.length === 0) {
+                        return console.log('No games found matching the search criteria.');
+                    }
+                    console.log(results);
+                }
+            });
+        }
+    },
+
     updateGameTitle: (req, res) => { // Correctly assign the function as a property
         const { name } = req.body;
         const { appID } = req.params;
