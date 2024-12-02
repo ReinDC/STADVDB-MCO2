@@ -14,16 +14,19 @@ async function getGames() {
         }
 
         let output = '<table>';
-        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';
+        output += '<tr><th>Edit</th><th>Delete</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th><th>Release Date</th></tr>';
 
         games.forEach(game => {
             output += `
                 <tr>
                     <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
+                    <td><button onclick="deleteGame(${game.AppID})">Delete</button></td>
                     <td style="text-align:center; padding: 10px;">${game.AppID}</td>
                     <td style="text-align:center; padding: 10px;">${game.Name}</td>
                     <td style="text-align:center; padding: 10px;">${game.Genres}</td>
                     <td style="text-align:center; padding: 10px;">${game.Developers}</td>
+                    <td style="text-align:center; padding: 10px;">${game.release_date}</td>
+
                 </tr>
             `;
         });
@@ -70,12 +73,15 @@ async function gameSearch() {
                 // Ensure 'Name' and 'Genres' match the properties from your database
                 output += 
                 `   <tr>
-                    <td><button onclick="">Edit</button></td>
-                    <td style= "text-align:center; padding: 10px;">${game.AppID}</td>
-                    <td style= "text-align:center; padding: 10px;">${game.Name}</td>
-                    <td style= "text-align:center; padding: 10px;">${game.Genres}</td>
-                    <td style= "text-align:center; padding: 10px;">${game.Developers}</td>
-                    </tr>`;
+                        <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
+                        <td><button onclick="deleteGame(${game.AppID})">Delete</button></td>
+                        <td style="text-align:center; padding: 10px;">${game.AppID}</td>
+                        <td style="text-align:center; padding: 10px;">${game.Name}</td>
+                        <td style="text-align:center; padding: 10px;">${game.Genres}</td>
+                        <td style="text-align:center; padding: 10px;">${game.Developers}</td>
+                        <td style="text-align:center; padding: 10px;">${game.release_date}</td>
+                    </tr>
+                `;
             });
             output += '</table>';
 
@@ -86,56 +92,6 @@ async function gameSearch() {
         document.getElementById('gamesList').innerHTML = '<p>Failed to fetch games. Please try again later.</p>';
     }
 }
-
-async function AppIDSearch() {
-    const searchValue = document.getElementById('appId_search').value.trim(); // Get the value from the search input and trim whitespace
-    if (!searchValue) {
-        document.getElementById('gamesList').innerHTML = "<p>Please enter an AppID to search.</p>";
-        return;
-    }
-
-    const url = `/search/appID?AppId=${encodeURIComponent(searchValue)}`;
-    document.getElementById('gamesList').innerHTML = ""; // Clear previous results
-    
-    try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Error: ${response.statusText}`);
-        }
-
-        const games = await response.json();
-
-        if (games.length === 0) {
-            document.getElementById('gamesList').innerHTML = '<p>No game found with that AppID.</p>';
-            return;
-        }
-
-        let output = '<table>';
-        output += '<tr><th>Edit</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th></tr>';
-
-        games.forEach(game => {
-            output += `
-                <tr>
-                    <td><button onclick="editGame(${game.AppID}, '${game.Name}')">Edit</button></td>
-                    <td style="text-align:center; padding: 10px;">${game.AppID}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Name}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Genres}</td>
-                    <td style="text-align:center; padding: 10px;">${game.Developers}</td>
-                </tr>
-            `;
-        });
-        output += '</table>';
-
-        document.getElementById('gamesList').innerHTML = output;
-
-    } catch (error) {
-        console.error('Error fetching games:', error);
-        document.getElementById('gamesList').innerHTML = '<p>Failed to fetch games. Please try again later.</p>';
-    }
-};
-
-
 
 // Edit a game title
 async function editGame(appID, currentName) {
@@ -162,5 +118,34 @@ async function editGame(appID, currentName) {
             console.error('Error updating game title:', error);
             alert('Failed to update game title. Please try again later.');
         }
+    }
+}
+
+// Delete a game 
+async function deleteGame(appID) {
+    const confirmation = confirm(`Are you sure you want to delete this game?`);
+    
+    if (!confirmation) {
+        return; 
+    }
+
+    try {
+        const response = await fetch(`/games/${appID}`, {
+            method: 'DELETE',  // Use DELETE instead of PUT
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        alert(result.message); // Inform user of successful deletion
+        getGames(); // Refresh the list after deleting the game
+    } catch (error) {
+        console.error('Error deleting game:', error);
+        alert('Failed to delete game. Please try again later.');
     }
 }

@@ -1,4 +1,5 @@
 const { connectionPools, executeUpdate, nodes } = require('../scripts/conn'); // Assuming you have a file that exports these
+const replicateData = require('../scripts/dbReplicate');
 
 const gameController = {
     getFrontPage: async (req, res) => {
@@ -19,6 +20,28 @@ const gameController = {
             }
         });
     },
+
+    deleteGame: (req, res) => {
+        const { appID } = req.params;
+    
+        if (!appID) {
+            return res.status(400).json({ error: "'appID' is required." });
+        }
+    
+        const sql = 'DELETE FROM more_Info WHERE AppId = ?';
+        const params = [appID];
+    
+        connectionPools[0].query(sql, params, (error, results) => {
+            if (error) {
+                console.error('Database query error:', error);
+                res.status(500).json({ error: 'An error occurred while deleting the game.' });
+            } else if (results.affectedRows > 0) {
+                res.json({ message: 'Game deleted successfully.' });
+            } else {
+                res.status(404).json({ error: 'Game not found.' });
+            }
+        });
+    },    
 
     updateGameTitle: (req, res) => { // Correctly assign the function as a property
         const { name } = req.body;

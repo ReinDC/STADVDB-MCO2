@@ -20,6 +20,7 @@ router.get('/', gameController.getFrontPage); // Front page route
 router.get('/games', gameController.getGames); // Get all games
 router.get('/search/games', gameController.searchGames); // Search games by name
 router.put('/games/:appID', gameController.updateGameTitle); // Update game title
+router.delete('/games/:appID', gameController.deleteGame)
 router.post('/recover', gameController.recoverNode); // Recover node
 
 module.exports = router;
