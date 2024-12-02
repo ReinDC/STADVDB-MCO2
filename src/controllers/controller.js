@@ -1,7 +1,6 @@
-const { connectionPools } = require('../scripts/conn.js'); // Import your connection pools
+const { connectionPools, executeUpdate, nodes } = require('./someModule'); // Assuming you have a file that exports these
 
-// GET: List of games
-exports.getGames = (req, res) => {
+const getGames = (req, res) => {
     const sql = 'SELECT * FROM more_Info LIMIT 20';
 
     connectionPools[0].query(sql, (error, results) => {
@@ -14,13 +13,13 @@ exports.getGames = (req, res) => {
     });
 };
 
-exports.getFrontPage = (req, res) => {
+const getFrontPage = (req, res) => {
     res.render("games", {
         title: "Front Page",
     });
-}
+};
 
-exports.updateQuery = async (req, res) => {
+const updateQuery = async (req, res) => {
     const { name, AppId } = req.body; // assuming these are sent in the request body
 
     const updateQuery = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
@@ -38,9 +37,8 @@ exports.updateQuery = async (req, res) => {
     }
 };
 
-
 // GET: Search games by name
-exports.searchGames = (req, res) => {
+const searchGames = (req, res) => {
     const searchName = req.query.name;
 
     if (!searchName) {
@@ -63,7 +61,7 @@ exports.searchGames = (req, res) => {
 };
 
 // POST: Recover failed node
-exports.recoverNode = (req, res) => {
+const recoverNode = (req, res) => {
     const failedNodeIndex = req.body.failedNodeIndex;
     const transactionLog = req.body.transactionLog;
 
@@ -81,8 +79,38 @@ exports.recoverNode = (req, res) => {
     }
 };
 
+const checkNodes = async (server_num, year) => {
+    if (server_num == 1) {
+        if (await nodes.isAvailable(server_num)) {
+            return 1;
+        } else {
+            if (year < 2020 && (await nodes.isAvailable(2))) {
+                return 2;
+            } else if (year >= 2020 && (await nodes.isAvailable(3))) {
+                return 3;
+            } else {
+                return 0;
+            }
+        }
+    } else {
+        if (await nodes.isAvailable(server_num)) {
+            return server_num;
+        } else {
+            if (await nodes.isAvailable(1)) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+};
 
-
-
-
-
+// Export all functions in an array
+module.exports = [
+    getGames,
+    getFrontPage,
+    updateQuery,
+    searchGames,
+    recoverNode,
+    checkNodes
+];
