@@ -3,6 +3,7 @@ const mysql = require('mysql2');
 require('dotenv').config();
 const hbs = require('hbs');
 const path = require('path');
+const {isAvailable} = require("./src/scripts/conn")
 
 const gameRouter = require('./src/routes/indexRouter');
 
@@ -20,21 +21,6 @@ app.use((req, res, next) => {
 });
 
 app.use(gameRouter);
-
-// Data replication logic
-const replicateData = (query, callback) => {
-    connectionPools.forEach((pool, index) => {
-        pool.query(query, (err, results) => {
-            if (err) {
-                console.error(`Replication failed on Node ${index + 1}:`, err);
-            } else {
-                console.log(`Data replicated successfully on Node ${index + 1}`);
-            }
-            if (callback) callback(err, results);
-        });
-    });
-};
-
 
 // Start the server
 const PORT = process.env.PORT || 3000;

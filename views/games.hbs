@@ -6,8 +6,16 @@
 <button onclick="gameSearch()">Search</button>
 
 <button onclick="getGames()">Load Games</button>
+<label for="gameSelect">Choose a node:</label>
+<select id="gameSelect" name="game">
+    <option value="1">Node 1</option>
+    <option value="2">Node 2</option>
+    <option value="3">Node 3</option>
+</select>
+<button onclick="isNodeAvailable()">Check node</button>
 <hr>
 <div id="edit-area"></div>
+
 
 
 <div id="gamesList"></div>
@@ -15,5 +23,12 @@
 
 
 
-
+<script>
+    function logSelectedValue() {
+        // Get the selected value of the dropdown
+        
+        // Log the selected value to the console
+        console.log("Selected Game:", selectedValue);
+    }
+</script>
 <script src="/js/game.js"></script>

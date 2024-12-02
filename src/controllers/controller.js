@@ -1,4 +1,4 @@
-const { connectionPools, executeUpdate, nodes } = require('../scripts/conn'); // Assuming you have a file that exports these
+const { connectionPools, isAvailable} = require('../scripts/conn'); // Assuming you have a file that exports these
 const replicateData = require('../scripts/dbReplicate');
 
 const gameController = {
@@ -153,6 +153,31 @@ const gameController = {
             res.json(results); // Return results as JSON response
         });
     },
+    isNodeAvail: async (req, res) => {
+        const { nodeNum } = req.body;
+    
+        // Validate nodeNum (should be a number between 1 and 3)
+        if (!nodeNum || nodeNum < 1 || nodeNum > 3) {
+            return res.status(400).json({ 
+                error: 'Invalid node number. Please provide a value between 1 and 3.' 
+            });
+        }
+    
+        try {
+            const available = await isAvailable(nodeNum);
+    
+            // If node is available, return 200, else return 401
+            if (available) {
+                res.sendStatus(200);  // Node is available
+            } else {
+                res.sendStatus(401);  // Node is unavailable
+            }
+        } catch (error) {
+            console.error("Error checking node availability:", error);  // Log the error for debugging
+            res.status(500).json({ error: "Internal Server Error" });  // Return a more descriptive error
+        }
+    }
+    ,    
 }
 
 

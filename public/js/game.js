@@ -142,3 +142,38 @@ async function deleteGame(appID) {
         alert('Failed to delete game. Please try again later.');
     }
 }
+
+
+async function isNodeAvailable() {
+    const selectedValue = Number(document.getElementById("gameSelect").value); // Get the selected value as a number
+
+    // Ensure the selected value is a valid node number (1, 2, or 3)
+    if (isNaN(selectedValue) || selectedValue < 1 || selectedValue > 3) {
+        alert("Please select a valid node.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/check-node', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nodeNum: selectedValue }) // Send the node number in the request body
+        });
+
+        if (response.ok) {
+            alert("Node " + selectedValue + " is available.");
+        } else if (response.status === 401) {
+            alert("Node is unavailable.");
+        } else if (response.status === 500) {
+            alert("Server error. Please try again later.");
+        } else {
+            alert("An unexpected error occurred. Please try again.");
+        }
+    } catch (error) {
+        console.error("Error checking node availability:", error);
+        alert("Failed to check node availability. Please try again later.");
+    }
+}
+

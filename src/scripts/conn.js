@@ -56,13 +56,15 @@ async function queryNodeDelay(nodenum, query, values) {
 
 async function isAvailable(node_num) {
     try {
-        await connectionPools[node_num - 1].query("SELECT 1");
+        // Ensure you're using the promise-based query
+        await connectionPools[node_num - 1].promise().query("SELECT 1");
         return true;
     } catch (err) {
         console.error(`Node ${node_num} is unavailable:`, err);
         return false;
     }
 }
+
 
 // Export connection pools
 module.exports = { connectionPools, queryNodeDelay, isAvailable};
