@@ -22,6 +22,10 @@ const retryQuery = async (sql, params, attempts = 5, delay = 3000, nodeNum) => {
                     }
                 });
             });
+
+            // Log success after successful retry
+            console.log(`Successfully executed query on Node ${nodeNum} after ${attempt + 1} attempt(s):`, sql);
+
             return results;
         } catch (error) {
             attempt++;
