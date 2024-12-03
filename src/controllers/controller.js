@@ -91,6 +91,7 @@ const gameController = {
     },
 
     getGames: async (req, res) => {
+        
         const sql = 'SELECT * FROM more_Info LIMIT 20';
         try {
             // Retry logic
