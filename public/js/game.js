@@ -178,14 +178,38 @@ async function isNodeAvailable() {
     }
 }
 
-async function caseConcurrent() {
+async function case1Concurrent() {
     try {
-       const response = await fetch('/search/test')
+       const response = await fetch('/search/case1')
        if(response.ok){
         alert('Case 1 Concurrency execution successful. Check console log for results.');
        }
     } catch (error) {
         console.error('Error with case 1 concurrency:', error);
 
+    }
+}
+
+async function case2Concurrent() {
+    const newName = prompt(`Edit the title for game with AppID: 10`);
+    try {
+        const response = await fetch('/search/case2', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newName}),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        alert(result.message);
+        getGames(); // Refresh the list after updating
+    } catch (error) {
+        console.error('Error updating game title:', error);
+        alert('Failed to update game title. Please try again later.');
     }
 }

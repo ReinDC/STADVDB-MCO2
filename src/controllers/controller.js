@@ -145,10 +145,10 @@ const gameController = {
         for (let n = 0; n < connectionPools.length; n++) {
             // get the current time as a string
             const currentTime = Date.now();
-            console.log('Timestamp in milliseconds: ' + currentTime);
+            console.log('Timestamp (ms): ' + currentTime);
 
             // get the execution time
-            console.time('Execution Time of Node: ' + (n+1));
+            console.time('Execution Time of Node ' + (n+1));
             connectionPools[n].query(sql, (error, results) => {
                 if (error) {
                     console.log('Database query error:', error);
@@ -160,29 +160,56 @@ const gameController = {
                     console.log(results);
                 }
             });
-            console.timeEnd('Execution Time of Node: ' + (n+1));
+            console.timeEnd('Execution Time of Node ' + (n+1));
         }
         res.status(200).send(`Case 1 Concurrency successful. Check console log.`);
     },
 
     edit_searchConcurrent: async (req, res) =>{
-        const edit_sql = 'SELECT * FROM more_Info WHERE AppId = 20';
-        const search_sql = 'SELECT * FROM more_Info WHERE AppId = 20';
+        const { name } = req.body;
+
+        const edit_sql = 'UPDATE more_Info SET name = ? WHERE AppId = 10';
+        const search_sql = 'SELECT * FROM more_Info WHERE AppId = 10';
 
         for (let n = 0; n < connectionPools.length; n++) {
-            connectionPools[n].query(sql, (error, results) => {
-                if (error) {
-                    console.log('Database query error:', error);
-                } else {
-                    if (results.length === 0) {
-                        return console.log('No games found matching the search criteria for Node ' + (n+1));
+            // get the current time as a string
+            const currentTime = Date.now();
+            console.log('Timestamp (ms): ' + currentTime);
+
+            // get the execution time
+            console.time('Execution Time of Node ' + (n+1));
+
+            if (n==0) { //Node 1 performs edit
+                connectionPools[n].query(edit_sql, name, (error, results) => {
+                    if (error) {
+                        console.log('Database query error:', error);
+                    } else {
+                        if (results.length === 0) {
+                            return console.log('No games found matching the search criteria for Node ' + (n+1));
+                        }
+                        console.log("Node " + (n+1));
+                        console.log(results);
                     }
-                    console.log("Node " + (n+1));
-                    console.log(results);
-                }
-            });
+                });
+                console.timeEnd('Execution Time of Node ' + (n+1));
+                await updateToSlave(10, name, 2);   //Replicate to Node 2
+            }
+            else {  //Node 2 and 3 performs search
+                connectionPools[n].query(search_sql, (error, results) => {
+                    if (error) {
+                        console.log('Database query error:', error);
+                    } else {
+                        if (results.length === 0) {
+                            return console.log('No games found matching the search criteria for Node ' + (n+1));
+                        }
+                        console.log("Node " + (n+1));
+                        console.log(results);
+                    }
+                });
+                console.timeEnd('Execution Time of Node ' + (n+1));
+            }    
         }
-        res.status(200).send(`Case 1 Concurrency successful. Check console log.`);
+        res.json({ message: 'Case 2 Concurrency successful. Check console log.' });
     },
 
     updateGameTitle: async (req, res) => {
