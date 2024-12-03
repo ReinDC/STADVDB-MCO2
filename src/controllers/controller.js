@@ -139,22 +139,23 @@ const gameController = {
         }
     },    
 
-    searchConcurrent: async (req, res) => {
-        const searchName = 'Counter-Strike';
-        const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
-    
+    searchConcurrent: async (req, res) =>{
+        const sql = 'SELECT * FROM more_Info WHERE AppId = 20';
+
         for (let n = 0; n < connectionPools.length; n++) {
-            try {
-                // Retry logic
-                const results = await retryQuery(sql, [`%${searchName}%`], 5, 3000, n + 1); // Retry logic applied to query
-                if (results.length === 0) {
-                    return console.log('No games found matching the search criteria.');
+            connectionPools[n].query(sql, (error, results) => {
+                if (error) {
+                    console.log('Database query error:', error);
+                } else {
+                    if (results.length === 0) {
+                        return console.log('No games found matching the search criteria for Node ' + (n+1));
+                    }
+                    console.log("Node " + (n+1));
+                    console.log(results);
                 }
-                console.log(results);
-            } catch (error) {
-                console.log('Database query error:', error);
-            }
+            });
         }
+        res.status(200).send(`Case 1 Concurrency succesful. Check console log.`);
     },
 
     updateGameTitle: async (req, res) => {

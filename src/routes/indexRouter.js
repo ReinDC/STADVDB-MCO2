@@ -44,5 +44,6 @@ router.put('/games/:appID', gameController.updateGameTitle); // Update game titl
 router.delete('/games/:appID', gameController.deleteGame)
 router.post('/recover', gameController.recoverNode); // Recover node
 router.post('/check-node', gameController.isNodeAvail)
+router.get('/search/test', gameController.searchConcurrent); // Search games by name
 
 module.exports = router;

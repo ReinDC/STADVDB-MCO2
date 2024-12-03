@@ -178,3 +178,14 @@ async function isNodeAvailable() {
     }
 }
 
+async function caseConcurrent() {
+    try {
+       const response = await fetch('/search/test')
+       if(response.ok){
+        alert('Case 1 Concurrency execution successful. Check console log for results.');
+       }
+    } catch (error) {
+        console.error('Error with case 1 concurrency:', error);
+
+    }
+}
