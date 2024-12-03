@@ -225,6 +225,56 @@ const gameController = {
         res.json({ message: 'Case 2 Concurrency successful. Check console log.' });
     },
 
+    editConcurrent: async (req, res) =>{
+        const { name1 } = req.body;
+        const { name2 } = req.body;
+        const { nodeNum } = req.body;
+
+        const edit_sql = 'UPDATE more_Info SET name = ? WHERE AppId = 10';
+
+            for (let n = 0; n < (connectionPools.length-1); n++) {
+                // get the current time as a string
+                const currentTime = Date.now();
+                console.log('Timestamp (ms): ' + currentTime);
+    
+                // get the execution time
+                console.time('Execution Time: ');
+    
+                if ((n==0 && nodeNum == 1) || (n==1 && nodeNum ==2)) { //Node 1 performs edit
+                    connectionPools[0].query(edit_sql, name1, (error, results) => {
+                        if (error) {
+                            console.log('Database query error:', error);
+                        } else {
+                            if (results.length === 0) {
+                                return console.log('No games found matching the search criteria for Node 1');
+                            }
+                            console.log("Node 1");
+                            console.log(results);
+                        }
+                    });
+                    console.timeEnd('Execution Time: ');
+                    await updateToSlave(10, name1, 2);   //Replicate to Node 2
+                }
+                else {  //Node 2 performs edit
+                    connectionPools[1].query(edit_sql, name2, (error, results) => {
+                        if (error) {
+                            console.log('Database query error:', error);
+                        } else {
+                            if (results.length === 0) {
+                                return console.log('No games found matching the search criteria for Node 2');
+                            }
+                            console.log("Node 2");
+                            console.log(results);
+                        }
+                    });
+                    console.timeEnd('Execution Time: ');
+                    await updateToSlave(10, name2, 1);   //Replicate to Node 2
+                }    
+            }
+
+        res.json({ message: 'Case 3 Concurrency successful. Check console log.' });
+    },
+
     updateGameTitle: async (req, res) => {
         const { name } = req.body;
         const { appID } = req.params;

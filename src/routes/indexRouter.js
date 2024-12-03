@@ -50,5 +50,6 @@ router.post('/recover', gameController.recoverNode); // Recover node
 router.post('/check-node', gameController.isNodeAvail)
 router.get('/search/case1', gameController.searchConcurrent); // Search a game concurrently
 router.put('/search/case2', gameController.edit_searchConcurrent); // Search and Edit a game concurrently
+router.put('/search/case3', gameController.editConcurrent); // Edit a game concurrently
 
 module.exports = router;

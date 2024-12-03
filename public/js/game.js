@@ -7,7 +7,7 @@ async function getGames() {
       
       
     try {
-        let output = `<h3>Loading games for Node ${selectedValue}</h3>`;
+        let output = `<h3>Loading games for Node ${selectedValue}</h3><br><button onclick="case3Concurrent(${selectedValue})">Test 3</button>`;
         const response = await fetch(`/games?${params.toString()}`);
 
         if (!response.ok) {
@@ -233,5 +233,38 @@ async function case2Concurrent() {
     } catch (error) {
         console.error('Error updating game title:', error);
         alert('Failed to update game title. Please try again later.');
+    }
+}
+
+async function case3Concurrent(nodeValue) {
+    const newName1 = prompt(`FOR NODE1: Edit the title for game with AppID: 10`);
+    const newName2 = prompt(`FOR NODE2: Edit the title once more for game with AppID: 10`);
+
+    if (selectedValue == 3) {
+        return alert("Choose either Node 1 or Node2 for the test. ")
+    }
+    
+    if(newName1 && newName2){
+
+        try {
+            const response = await fetch('/search/case3', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name1: newName1, name2: newName2, nodeNum: nodeValue}),
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+            }
+    
+            const result = await response.json();
+            alert(result.message);
+            getGames(); // Refresh the list after updating
+        } catch (error) {
+            console.error('Error updating game title:', error);
+            alert('Failed to update game title. Please try again later.');
+        }
     }
 }
