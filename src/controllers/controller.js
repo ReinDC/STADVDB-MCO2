@@ -1,5 +1,12 @@
 const { connectionPools, isAvailable} = require('../scripts/conn'); // Assuming you have a file that exports these
 
+// Logs for recovery transactions to store and replay later
+let transactionLogs = {
+    1: [],  // Transaction logs for Node 1
+    2: [],  // Transaction logs for Node 2
+    3: [],  // Transaction logs for Node 3
+};
+
 // Function to replicate the update to the appropriate slave node
 const updateToSlave = (gameId, newTitle, nodeNum) => {
     return new Promise((resolve, reject) => {
@@ -10,6 +17,10 @@ const updateToSlave = (gameId, newTitle, nodeNum) => {
         connectionPools[nodeNum - 1].query(sql, params, (error, results) => {
             if (error) {
                 console.error(`Error replicating to Node ${nodeNum}:`, error);
+                
+                // Log the failed transaction for recovery
+                transactionLogs[nodeNum - 1].push({ sql, params });
+
                 reject(error);  // Reject the promise if the replication fails
             } else {
                 console.log(`Replicated to Node ${nodeNum}:`, results);
@@ -28,6 +39,10 @@ const deleteToSlave = (appID, nodeNum) => {
         connectionPools[nodeNum - 1].query(sql, params, (error, results) => {
             if (error) {
                 console.error(`Error replicating to Node ${nodeNum}:`, error);
+
+                // Log the failed transaction for recovery
+                transactionLogs[nodeNum - 1].push({ sql, params });
+
                 reject(error);  // Reject the promise if the replication fails
             } else {
                 console.log(`Replicated to Node ${nodeNum}:`, results);
@@ -60,7 +75,7 @@ const gameController = {
     deleteGame: (req, res) => {
         const { appID } = req.params;
         const { releaseYear } = req.body;
-        
+    
         if (!appID) {
             return res.status(400).json({ error: "'appID' is required." });
         }
@@ -74,24 +89,37 @@ const gameController = {
                 res.status(500).json({ error: 'An error occurred while deleting the game.' });
             } else if (results.affectedRows > 0) {
                 try {
+                    // If replication to slave node fails, log the failed transaction for recovery later
                     if (releaseYear < 2010) {
-                        // Replicate to Node 2 (games before 2010)
-                        await deleteToSlave(appID, 2);
+                        try {
+                            // Replicate to Node 2 (games before 2010)
+                            await deleteToSlave(appID, 2);
+                        } catch (replicationError) {
+                            console.error('Error replicating to Node 2:', replicationError);
+                            // Log failed transaction for Node 2 recovery
+                            transactionLogs[2].push({ sql, params });
+                        }
                     } else {
-                        // Replicate to Node 3 (games after 2010)
-                        await deleteToSlave(appID, 3);
+                        try {
+                            // Replicate to Node 3 (games after 2010)
+                            await deleteToSlave(appID, 3);
+                        } catch (replicationError) {
+                            console.error('Error replicating to Node 3:', replicationError);
+                            // Log failed transaction for Node 3 recovery
+                            transactionLogs[3].push({ sql, params });
+                        }
                     }
-                    res.json({ message: 'Game title deleted successfully.' });
+                    res.json({ message: 'Game deleted successfully.' });
                 } catch (replicationError) {
                     console.error('Error replicating to slave:', replicationError);
                     return res.status(500).json({ error: 'Error replicating the update to slave node.' });
                 }
-                res.json({ message: 'Game deleted successfully.' });
             } else {
                 res.status(404).json({ error: 'Game not found.' });
             }
         });
-    },    
+    }
+    ,    
 
     searchConcurrent: (req, res) =>{
         const searchName = 'Counter-Strike';
@@ -112,7 +140,7 @@ const gameController = {
         }
     },
 
-    updateGameTitle: (req, res) => { // Correctly assign the function as a property
+    updateGameTitle: (req, res) => {
         const { name } = req.body;
         const { appID } = req.params;
         const { releaseYear } = req.body;
@@ -130,15 +158,28 @@ const gameController = {
                 res.status(500).json({ error: 'An error occurred while updating the game title.' });
             } else if (results.affectedRows > 0) {
                 try {
+                    // If replication to slave node fails, log the failed transaction for recovery later
                     if (releaseYear < 2010) {
-                        // Replicate to Node 2 (games before 2010)
-                        await updateToSlave(appID, name, 2);
+                        try {
+                            // Replicate to Node 2 (games before 2010)
+                            await updateToSlave(appID, name, 2);
+                        } catch (replicationError) {
+                            console.error('Error replicating to Node 2:', replicationError);
+                            // Log failed transaction for Node 2 recovery
+                            transactionLogs[2].push({ sql, params });
+                        }
                     } else {
-                        // Replicate to Node 3 (games after 2010)
-                        await updateToSlave(appID, name, 3);
+                        try {
+                            // Replicate to Node 3 (games after 2010)
+                            await updateToSlave(appID, name, 3);
+                        } catch (replicationError) {
+                            console.error('Error replicating to Node 3:', replicationError);
+                            // Log failed transaction for Node 3 recovery
+                            transactionLogs[3].push({ sql, params });
+                        }
                     }
                     res.json({ message: 'Game title updated successfully.' });
-
+    
                 } catch (replicationError) {
                     console.error('Error replicating to slave:', replicationError);
                     return res.status(500).json({ error: 'Error replicating the update to slave node.' });
@@ -176,12 +217,16 @@ const gameController = {
 
         if (failedNodeIndex !== undefined && transactionLog) {
             const pool = connectionPools[failedNodeIndex];
+
             transactionLog.forEach((query) => {
-                pool.query(query, (err) => {
+                pool.query(query.sql, query.params, (err) => {
                     if (err) console.error(`Recovery failed for Node ${failedNodeIndex + 1}:`, err);
-                    else console.log(`Recovered transaction: ${query}`);
+                    else console.log(`Recovered transaction: ${query.sql}`);
                 });
             });
+
+            // Clear log for this node after recovery
+            transactionLogs[failedNodeIndex] = [];
             res.status(200).send(`Node ${failedNodeIndex + 1} recovered.`);
         } else {
             res.status(400).send('Invalid recovery request.');
