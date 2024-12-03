@@ -19,7 +19,7 @@ const updateToSlave = (gameId, newTitle, nodeNum) => {
                 console.error(`Error replicating to Node ${nodeNum}:`, error);
                 
                 // Log the failed transaction for recovery
-                transactionLogs[nodeNum - 1].push({ sql, params });
+                transactionLogs[nodeNum].push({ sql, params });
 
                 reject(error);  // Reject the promise if the replication fails
             } else {
@@ -41,7 +41,7 @@ const deleteToSlave = (appID, nodeNum) => {
                 console.error(`Error replicating to Node ${nodeNum}:`, error);
 
                 // Log the failed transaction for recovery
-                transactionLogs[nodeNum - 1].push({ sql, params });
+                transactionLogs[nodeNum].push({ sql, params });
 
                 reject(error);  // Reject the promise if the replication fails
             } else {
