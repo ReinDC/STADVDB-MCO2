@@ -1,6 +1,14 @@
 async function getGames() {
+    const selectedValue = Number(document.getElementById("gameSelect").value); // Get the selected value as a number
+    const params = new URLSearchParams({
+        nodeNum: selectedValue,
+        // other parameters you want to send
+      });
+      
+      
     try {
-        const response = await fetch('/games');
+        let output = `<h3>Loading games for Node ${selectedValue}</h3>`;
+        const response = await fetch(`/games?${params.toString()}`);
 
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
@@ -13,7 +21,7 @@ async function getGames() {
             return;
         }
 
-        let output = '<table>';
+        output += '<table>';
         output += '<tr><th>Edit</th><th>Delete</th><th>AppID</th><th>Title</th><th>Genre</th><th>Developers</th><th>Release Date</th></tr>';
 
         games.forEach(game => {

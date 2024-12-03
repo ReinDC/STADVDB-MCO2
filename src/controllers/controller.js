@@ -93,9 +93,10 @@ const gameController = {
     getGames: async (req, res) => {
         
         const sql = 'SELECT * FROM more_Info LIMIT 20';
+        const { nodeNum } = req.query; // Access query parameters here
         try {
             // Retry logic
-            const results = await retryQuery(sql, [], 5, 3000, 1); // Retry logic applied to query
+            const results = await retryQuery(sql, [], 5, 3000, nodeNum); // Retry logic applied to query
             res.json(results);
         } catch (error) {
             console.error('Database query error:', error);
