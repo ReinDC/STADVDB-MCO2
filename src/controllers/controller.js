@@ -107,6 +107,7 @@ const gameController = {
     deleteGame: async (req, res) => {
         const { appID } = req.params;
         const { releaseYear } = req.body;
+        const { nodeNum } = req.body;
     
         if (!appID) {
             return res.status(400).json({ error: "'appID' is required." });
@@ -122,10 +123,12 @@ const gameController = {
             if (results.affectedRows > 0) {
                 try {
                     // If replication to slave node fails, log the failed transaction for recovery later
-                    if (releaseYear < 2010) {
+                    if (releaseYear < 2010 && nodeNum == 1) {
                         await deleteToSlave(appID, 2); // Replication to Node 2
-                    } else {
+                    } else if (releaseYear >= 2010 && nodeNum == 1){
                         await deleteToSlave(appID, 3); // Replication to Node 3
+                    } else {
+                        await deleteToSlave(appID, 1);
                     }
                     res.json({ message: 'Game deleted successfully.' });
                 } catch (replicationError) {
@@ -218,6 +221,7 @@ const gameController = {
         const { name } = req.body;
         const { appID } = req.params;
         const { releaseYear } = req.body;
+        const { nodeNum } = req.body;
     
         if (!name || !appID) {
             return res.status(400).json({ error: "Both 'name' and 'appID' are required." });
@@ -228,15 +232,17 @@ const gameController = {
     
         try {
             // **Retry logic added here**
-            const results = await retryQuery(sql, params, 5, 3000, 1); // Retry logic applied to query
+            const results = await retryQuery(sql, params, 5, 3000, nodeNum); // Retry logic applied to query
     
             if (results.affectedRows > 0) {
                 try {
                     // If replication to slave node fails, log the failed transaction for recovery later
-                    if (releaseYear < 2010) {
+                    if (releaseYear < 2010 && nodeNum == 1) {
                         await updateToSlave(appID, name, 2); // Replication to Node 2
-                    } else {
+                    } else if(releaseYear >= 2010 && nodeNum == 1){
                         await updateToSlave(appID, name, 3); // Replication to Node 3
+                    } else {
+                        await updateToSlave(appID, name, 1)
                     }
                     res.json({ message: 'Game title updated successfully.' });
                 } catch (replicationError) {

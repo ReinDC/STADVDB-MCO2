@@ -96,6 +96,14 @@ async function gameSearch() {
 
 // Edit a game title
 async function editGame(appID, currentName, release_date) {
+    const selectedValue = Number(document.getElementById("gameSelect").value); // Get the selected value as a number
+
+    if (release_date < 2010 && selectedValue == 3) {
+        return alert("Choose the right node base on the release date. ")
+    } else if(release_date >= 2010 && selectedValue == 2){
+        return alert("Choose the right node base on the release date. ")
+    }
+
     const newName = prompt(`Edit the title for game with AppID: ${appID}\nCurrent title: ${currentName}`, currentName);
 
     if (newName && newName !== currentName) {
@@ -105,7 +113,7 @@ async function editGame(appID, currentName, release_date) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name: newName , releaseYear: release_date}),
+                body: JSON.stringify({ name: newName , releaseYear: release_date, nodeNum: selectedValue}),
             });
 
             if (!response.ok) {
@@ -124,6 +132,12 @@ async function editGame(appID, currentName, release_date) {
 
 // Delete a game 
 async function deleteGame(appID, release_date) {
+    const selectedValue = Number(document.getElementById("gameSelect").value); // Get the selected value as a number
+    if (release_date < 2010 && selectedValue == 3) {
+        return alert("Choose the right node base on the release date. ")
+    } else if(release_date >= 2010 && selectedValue == 2){
+        return alert("Choose the right node base on the release date. ")
+    }
     const confirmation = confirm(`Are you sure you want to delete this game?`);
     
     if (!confirmation) {
@@ -135,7 +149,7 @@ async function deleteGame(appID, release_date) {
             method: 'DELETE',  // Use DELETE instead of PUT
             headers: {
                 'Content-Type': 'application/json',
-            body: JSON.stringify({ releaseYear: release_date}),
+            body: JSON.stringify({ releaseYear: release_date, nodeNum: selectedValue}),
             },
         });
 
