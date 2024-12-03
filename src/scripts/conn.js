@@ -18,15 +18,13 @@ const connectionPools = nodes.map((node) =>
         database: node.database,
         waitForConnections: true,
         connectionLimit: 10,
-        // Optional: add a flag or additional configuration for master/slave handling if needed
     })
 );
-
-
 
 async function queryNodeDelay(nodenum, query, values) {
     let node;
     try {
+        // Try to get the connection from the specific node
         node = await connectionPools[nodenum - 1].getConnection();
         await node.beginTransaction();
 
@@ -39,7 +37,7 @@ async function queryNodeDelay(nodenum, query, values) {
         await new Promise(resolve => setTimeout(resolve, 10000));
 
         await node.commit();
-        console.log("Transaction committed successfully.", query);
+        console.log("Transaction committed successfully.");
         return results;
     } catch (err) {
         console.error("Transaction Error:", err);
@@ -49,6 +47,16 @@ async function queryNodeDelay(nodenum, query, values) {
             console.log("Transaction rolled back successfully.");
         } catch (rollbackErr) {
             console.error("Rollback Error:", rollbackErr);
+        }
+
+        // Attempt to query an available node if the specified node fails
+        try {
+            const fallbackNode = await getAvailableNode();
+            const [fallbackResults] = await fallbackNode.promise().query(query, values);
+            console.log("Query executed successfully on fallback node.");
+            return fallbackResults;
+        } catch (fallbackErr) {
+            console.error("Fallback query also failed:", fallbackErr);
         }
         throw err;
     } finally {
@@ -64,11 +72,10 @@ async function isAvailable(node_num) {
         await connectionPools[node_num - 1].promise().query("SELECT 1");
         return true;
     } catch (err) {
-        console.error(`Node ${node_num} is unavailable:`);
+        console.error(`Node ${node_num} is unavailable: ${err.message}`);
         return false;
     }
 }
 
-
-// Export connection pools
-module.exports = { connectionPools, queryNodeDelay, isAvailable};
+// Export connection pools and functions
+module.exports = { connectionPools, queryNodeDelay, isAvailable };

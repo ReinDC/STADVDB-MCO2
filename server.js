@@ -3,7 +3,6 @@ const mysql = require('mysql2');
 require('dotenv').config();
 const hbs = require('hbs');
 const path = require('path');
-const {isAvailable} = require("./src/scripts/conn")
 
 const gameRouter = require('./src/routes/indexRouter');
 

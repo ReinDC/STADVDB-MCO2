@@ -94,6 +94,10 @@ const gameController = {
         
         const sql = 'SELECT * FROM more_Info LIMIT 20';
         const { nodeNum } = req.query; // Access query parameters here
+
+        if(!isAvailable(nodeNum)){
+            return res.status(404).json({ error: "Node is not available, please choose another one." });
+        }
         try {
             // Retry logic
             const results = await retryQuery(sql, [], 5, 3000, nodeNum); // Retry logic applied to query
@@ -111,6 +115,10 @@ const gameController = {
     
         if (!appID) {
             return res.status(400).json({ error: "'appID' is required." });
+        }
+
+        if(!isAvailable(nodeNum)){
+            return res.status(404).json({ error: "Node is not available, please choose another one." });
         }
     
         const sql = 'DELETE FROM more_Info WHERE AppId = ?';
@@ -225,6 +233,10 @@ const gameController = {
     
         if (!name || !appID) {
             return res.status(400).json({ error: "Both 'name' and 'appID' are required." });
+        }
+
+        if(!isAvailable(nodeNum)){
+            return res.status(404).json({ error: "Node is not available, please choose another one." });
         }
     
         const sql = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
