@@ -86,20 +86,19 @@ const gameController = {
         });
     },
 
-    getGames: (req, res) => {
+    getGames: async (req, res) => {
         const sql = 'SELECT * FROM more_Info LIMIT 20';
-
-        connectionPools[0].query(sql, (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                res.status(500).send('Database error');
-            } else {
-                res.json(results);
-            }
-        });
+        try {
+            // Retry logic
+            const results = await retryQuery(sql, [], 5, 3000, 1); // Retry logic applied to query
+            res.json(results);
+        } catch (error) {
+            console.error('Database query error:', error);
+            res.status(500).send('Database error');
+        }
     },
 
-    deleteGame: (req, res) => {
+    deleteGame: async (req, res) => {
         const { appID } = req.params;
         const { releaseYear } = req.body;
     
@@ -110,64 +109,51 @@ const gameController = {
         const sql = 'DELETE FROM more_Info WHERE AppId = ?';
         const params = [appID];
     
-        connectionPools[0].query(sql, params, async (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                res.status(500).json({ error: 'An error occurred while deleting the game.' });
-            } else if (results.affectedRows > 0) {
+        try {
+            // Retry logic added
+            const results = await retryQuery(sql, params, 5, 3000, 1); // Retry logic applied to query
+    
+            if (results.affectedRows > 0) {
                 try {
                     // If replication to slave node fails, log the failed transaction for recovery later
                     if (releaseYear < 2010) {
-                        try {
-                            // Replicate to Node 2 (games before 2010)
-                            await deleteToSlave(appID, 2);
-                        } catch (replicationError) {
-                            console.error('Error replicating to Node 2:', replicationError);
-                            // Log failed transaction for Node 2 recovery
-                            transactionLogs[2].push({ sql, params });
-                        }
+                        await deleteToSlave(appID, 2); // Replication to Node 2
                     } else {
-                        try {
-                            // Replicate to Node 3 (games after 2010)
-                            await deleteToSlave(appID, 3);
-                        } catch (replicationError) {
-                            console.error('Error replicating to Node 3:', replicationError);
-                            // Log failed transaction for Node 3 recovery
-                            transactionLogs[3].push({ sql, params });
-                        }
+                        await deleteToSlave(appID, 3); // Replication to Node 3
                     }
                     res.json({ message: 'Game deleted successfully.' });
                 } catch (replicationError) {
                     console.error('Error replicating to slave:', replicationError);
-                    return res.status(500).json({ error: 'Error replicating the update to slave node.' });
+                    return res.status(500).json({ error: 'Error replicating the delete to slave node.' });
                 }
             } else {
                 res.status(404).json({ error: 'Game not found.' });
             }
-        });
-    }
-    ,    
+        } catch (error) {
+            console.error('Database query error:', error);
+            res.status(500).json({ error: 'An error occurred while deleting the game.' });
+        }
+    },    
 
-    searchConcurrent: (req, res) =>{
+    searchConcurrent: async (req, res) => {
         const searchName = 'Counter-Strike';
         const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
     
-        
         for (let n = 0; n < connectionPools.length; n++) {
-            connectionPools[n].query(sql, [`%${searchName}%`], (error, results) => {
-                if (error) {
-                    console.log('Database query error:', error);
-                } else {
-                    if (results.length === 0) {
-                        return console.log('No games found matching the search criteria.');
-                    }
-                    console.log(results);
+            try {
+                // Retry logic
+                const results = await retryQuery(sql, [`%${searchName}%`], 5, 3000, n + 1); // Retry logic applied to query
+                if (results.length === 0) {
+                    return console.log('No games found matching the search criteria.');
                 }
-            });
+                console.log(results);
+            } catch (error) {
+                console.log('Database query error:', error);
+            }
         }
     },
 
-    updateGameTitle: (req, res) => {
+    updateGameTitle: async (req, res) => {
         const { name } = req.body;
         const { appID } = req.params;
         const { releaseYear } = req.body;
@@ -179,34 +165,19 @@ const gameController = {
         const sql = 'UPDATE more_Info SET name = ? WHERE AppId = ?';
         const params = [name, appID];
     
-        connectionPools[0].query(sql, params, async (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                res.status(500).json({ error: 'An error occurred while updating the game title.' });
-            } else if (results.affectedRows > 0) {
+        try {
+            // **Retry logic added here**
+            const results = await retryQuery(sql, params, 5, 3000, 1); // Retry logic applied to query
+    
+            if (results.affectedRows > 0) {
                 try {
                     // If replication to slave node fails, log the failed transaction for recovery later
                     if (releaseYear < 2010) {
-                        try {
-                            // Replicate to Node 2 (games before 2010)
-                            await updateToSlave(appID, name, 2);
-                        } catch (replicationError) {
-                            console.error('Error replicating to Node 2:', replicationError);
-                            // Log failed transaction for Node 2 recovery
-                            transactionLogs[2].push({ sql, params });
-                        }
+                        await updateToSlave(appID, name, 2); // Replication to Node 2
                     } else {
-                        try {
-                            // Replicate to Node 3 (games after 2010)
-                            await updateToSlave(appID, name, 3);
-                        } catch (replicationError) {
-                            console.error('Error replicating to Node 3:', replicationError);
-                            // Log failed transaction for Node 3 recovery
-                            transactionLogs[3].push({ sql, params });
-                        }
+                        await updateToSlave(appID, name, 3); // Replication to Node 3
                     }
                     res.json({ message: 'Game title updated successfully.' });
-    
                 } catch (replicationError) {
                     console.error('Error replicating to slave:', replicationError);
                     return res.status(500).json({ error: 'Error replicating the update to slave node.' });
@@ -214,29 +185,32 @@ const gameController = {
             } else {
                 res.status(404).json({ error: 'Game not found.' });
             }
-        });
+        } catch (error) {
+            console.error('Database query error:', error);
+            res.status(500).json({ error: 'An error occurred while updating the game title.' });
+        }
     },
 
-    searchGames: (req, res) => {
+    searchGames: async (req, res) => {
         const searchName = req.query.name;
-
+    
         if (!searchName) {
             return res.status(400).send('Game name query parameter is required.');
         }
-
+    
         const sql = 'SELECT * FROM more_Info WHERE name LIKE ?';
-
-        connectionPools[0].query(sql, [`%${searchName}%`], (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                res.status(500).send('Database error');
-            } else {
-                if (results.length === 0) {
-                    return res.status(404).send('No games found matching the search criteria.');
-                }
-                res.json(results);
+    
+        try {
+            // **Retry logic added here**
+            const results = await retryQuery(sql, [`%${searchName}%`], 5, 3000, 1); // Retry logic applied to query
+            if (results.length === 0) {
+                return res.status(404).send('No games found matching the search criteria.');
             }
-        });
+            res.json(results);
+        } catch (error) {
+            console.error('Database query error:', error);
+            res.status(500).send('Database error');
+        }
     },
 
     recoverNode: (req, res) => {
