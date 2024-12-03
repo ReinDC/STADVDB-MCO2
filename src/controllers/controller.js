@@ -7,6 +7,33 @@ let transactionLogs = {
     3: [],  // Transaction logs for Node 3
 };
 
+// Function to retry database operations if a node is unavailable
+const retryQuery = async (sql, params, attempts = 5, delay = 3000, nodeNum) => {
+    let attempt = 0;
+    while (attempt < attempts) {
+        try {
+            // Attempt the query using the specified connection pool
+            const results = await new Promise((resolve, reject) => {
+                connectionPools[nodeNum - 1].query(sql, params, (error, results) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(results);
+                    }
+                });
+            });
+            return results;
+        } catch (error) {
+            attempt++;
+            if (attempt >= attempts) {
+                throw new Error(`Failed after ${attempts} attempts: ${error.message}`);
+            }
+            console.log(`Retrying... Attempt ${attempt + 1} of ${attempts}`);
+            await new Promise(resolve => setTimeout(resolve, delay)); // Wait before retrying
+        }
+    }
+};
+
 // Function to replicate the update to the appropriate slave node
 const updateToSlave = (gameId, newTitle, nodeNum) => {
     return new Promise((resolve, reject) => {
