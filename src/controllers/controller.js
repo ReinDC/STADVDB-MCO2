@@ -320,36 +320,13 @@ const gameController = {
             }
         }
     },
-    appIDSearch: async (req, res) => {
-        // Validate if AppId is provided and is of correct format
-        const { AppId } = req.query; // Use req.query since AppId is in the URL query string
-        if (!AppId) {
-            return res.status(400).send('AppId is required.');
-        }
-    
-        const sql = 'SELECT * FROM more_Info WHERE AppID = ?';
-        const params = [AppId];
-    
-        connectionPools[0].query(sql, params, (error, results) => {
-            if (error) {
-                console.error('Database query error:', error);
-                return res.status(500).send('Internal server error');
-            }
-    
-            if (results.length === 0) {
-                return res.status(404).send('No games found matching the search criteria.');
-            }
-    
-            res.json(results); // Return results as JSON response
-        });
-    },
     isNodeAvail: async (req, res) => {
         const { nodeNum } = req.body;
     
         // Validate nodeNum (should be a number between 1 and 3)
         if (!nodeNum || nodeNum < 1 || nodeNum > 3) {
-            return res.status(400).json({ 
-                error: 'Invalid node number. Please provide a value between 1 and 3.' 
+            return res.status(400).json({
+                error: 'Invalid node number. Please provide a value between 1 and 3.'
             });
         }
     
@@ -358,16 +335,17 @@ const gameController = {
     
             // If node is available, return 200, else return 401
             if (available) {
-                res.sendStatus(200);  // Node is available
+                return res.sendStatus(200);  // Node is available
             } else {
-                res.sendStatus(401);  // Node is unavailable
+                return res.sendStatus(401);  // Node is unavailable
             }
         } catch (error) {
             console.error("Error checking node availability:", error);  // Log the error for debugging
-            res.status(500).json({ error: "Internal Server Error" });  // Return a more descriptive error
+            if (!res.headersSent) {  // Make sure a response is not already sent
+                return res.status(500).json({ error: "Internal Server Error" });  // Return a more descriptive error
+            }
         }
     }
-    ,    
 }
 
 
